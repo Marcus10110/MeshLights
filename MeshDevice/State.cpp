@@ -3,6 +3,23 @@
 
 StateManager::StateManager( StateChangedCallback callback ) : mOnChangeCallback(callback) {}
 
+void StateManager::Init()
+{
+    mStateSerializer.Init();
+    //Serial.println("loading state...");
+    if( !mStateSerializer.DeserializeState( &mState ) )
+    {
+        //Serial.println("failed to read state. attempting write...");
+        //serialize the default state:
+        State reset_default_state;
+        mState = reset_default_state; //default copy assignment.
+        mStateSerializer.SerializeState( &mState );
+        //Serial.println("finished writing default state");
+        return;
+    }
+    //Serial.println("successfully read state");
+}
+
 const State* StateManager::GetState()
 {
     return &mState;
@@ -119,27 +136,32 @@ void StateManager::SetDeviceType(device_type_t device_type)
 {
     //note: we could be an an invalid index. TODO: decide what we want to do about that.
     mState.mDeviceType = device_type;
+    mStateSerializer.SerializeState(&mState);
     mOnChangeCallback(&mState);
 }
 void StateManager::SetLedCount(uint16_t count)
 {
     mState.mLedCount = count;
+    mStateSerializer.SerializeState(&mState);
     mOnChangeCallback(&mState);
 }
 void StateManager::SetBrightness(uint8_t brightness)
 {
     mState.mBrightness = brightness;
+    mStateSerializer.SerializeState(&mState);
     mOnChangeCallback(&mState);
 }
 void StateManager::SetGroup(uint8_t group)
 {
     //TODO: switch over to new local state.
     mState.mGroup = group;
+    mStateSerializer.SerializeState(&mState);
     mOnChangeCallback(&mState);
 }
 void StateManager::SetDeviceName(const char* name)
 {
-    strncpy( mState.mDeviceName, name, MAX_NAME_LENGTH);   
+    strncpy( mState.mDeviceName, name, MAX_NAME_LENGTH);
+    mStateSerializer.SerializeState(&mState);
     mOnChangeCallback(&mState);
 }
 

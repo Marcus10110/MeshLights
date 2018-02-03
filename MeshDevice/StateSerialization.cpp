@@ -2,22 +2,24 @@
 #include <EEPROM.h>
 #include "ArduinoJson.h"
 #include "Arduino.h"
+#include "State.h"
 
+static const uint16_t gMaxStringLength = 300;
 static const uint16_t gStringMarker = 0x0F5A;
 static const uint16_t gStateAddress = 0;
 
 StateSerialization::StateSerialization()
+{
+    
+}
+
+void StateSerialization::Init()
 {
     EEPROM.begin(1024);
 }
 
 void StateSerialization::SerializeState(const State* state)
 {
-    // device_type_t mDeviceType{device_type_t::LED};
-	// uint16_t mLedCount{20};
-	// uint8_t mBrightness{255};
-	// uint8_t mGroup{0};
-	// char mDeviceName[MAX_NAME_LENGTH+1] = "untitled";
     //estimated json size: 150.
     StaticJsonBuffer<200> jsonBuffer;
     JsonObject& root = jsonBuffer.createObject();
@@ -29,12 +31,8 @@ void StateSerialization::SerializeState(const State* state)
 
     String write_buffer;
     root.printTo(write_buffer);
-
-
-
-    Serial.println("serializing state:");
-    root.printTo(Serial);
-    Serial.println("\ndone");
+    WriteString( gStateAddress, write_buffer );
+    EEPROM.commit();
 }
 
 bool StateSerialization::DeserializeState(State* state)
@@ -42,21 +40,24 @@ bool StateSerialization::DeserializeState(State* state)
     String readback_string;
     if(!ReadString(gStateAddress, readback_string))
     {
-        Serial.println("DeserializeState failed - no valid string saved");
+        return false;
     }
     StaticJsonBuffer<200> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(readback_string);
+    if( !root.success())
+        return false;
     int device_type_int = root["mDeviceType"];
     state->mDeviceType = (device_type_t)device_type_int;
     state->mLedCount = root["mLedCount"];
     state->mBrightness = root["mBrightness"];
     state->mGroup = root["mGroup"];
     const char* device_name = root["mDeviceName"];
-    if( strlen(device_name) > MAX_NAME_LENGTH)
+    if( (device_name == nullptr) || (strlen(device_name) > MAX_NAME_LENGTH) )
     {
         return false;
     }
     strcpy(state->mDeviceName, device_name);
+
     return root.success();
 }
 
@@ -89,26 +90,42 @@ void StateSerialization::TestEEPROM()
     }
 }
 
+void StateSerialization::TestSerialization()
+{
+    State ref_state;
+    ref_state.mDeviceType = device_type_t::DIMMER;
+    ref_state.mLedCount = 5;
+    ref_state.mBrightness = 57;
+    ref_state.mGroup = 9;
+    const char* ref_name = "markwashere";
+    strcpy(ref_state.mDeviceName, ref_name);
+
+
+    State target_state;
+
+    SerializeState(&ref_state);
+    bool success = DeserializeState(&target_state);
+    Serial.println("starting serialization test...");
+    Assert( success == true, "result was failure" );
+    Assert( ref_state.mDeviceType == target_state.mDeviceType, "mDeviceType missmatch" );
+    Assert( ref_state.mLedCount == target_state.mLedCount, "mLedCount missmatch" );
+    Assert( ref_state.mBrightness == target_state.mBrightness, "mBrightness missmatch" );
+    Assert( ref_state.mGroup == target_state.mGroup, "mGroup missmatch" );
+    Assert( ref_state.mGroup == (target_state.mGroup+1), "testing group missmatch" );
+    Assert( strcmp(ref_state.mDeviceName, target_state.mDeviceName) == 0, "mDeviceName missmatch" );
+    Serial.println("done with serialization test");
+}
+
 uint16_t StateSerialization::WriteString(uint16_t location, const String& contents)
 {
-    Serial.print("write marker location: ");
-    Serial.println(location);
-
-
     //put a marker at the front of the string, indicating a valid string.
     EEPROM.put(location, gStringMarker);
     location += sizeof(gStringMarker);
-
-    Serial.print("write length location: ");
-    Serial.println(location);
 
     //write the string length
     uint16_t string_length = contents.length()+1; //including null terminator
     EEPROM.put(location, string_length);
     location += sizeof(string_length);
-
-    Serial.print("write string location: ");
-    Serial.println(location);
 
     //write the string itself.
     const char* str = contents.c_str();
@@ -122,27 +139,20 @@ uint16_t StateSerialization::WriteString(uint16_t location, const String& conten
 
 bool StateSerialization::ReadString(uint16_t location, String& buffer)
 {
-
-    Serial.print("read marker location: ");
-    Serial.println(location);
-
     //verify marker.
     uint16_t marker_readback;
     EEPROM.get(location, marker_readback);
     if( marker_readback != gStringMarker )
         return false;
     location += sizeof(marker_readback);
-
-    Serial.print("read length location: ");
-    Serial.println(location);
     
     //read the string length.
     uint16_t string_length;
     EEPROM.get(location, string_length);
     location += sizeof(string_length);
 
-    Serial.print("read string location: ");
-    Serial.println(location);
+    if( string_length > gMaxStringLength )
+        return false;
 
     //read the string.
     buffer.reserve(string_length);
@@ -160,4 +170,12 @@ bool StateSerialization::ReadString(uint16_t location, String& buffer)
     }
 
     return true;
+}
+
+void Assert( bool assertion, const char* message )
+{
+    if(assertion)
+        return;
+    Serial.print("ASSERT: ");
+    Serial.println( message );
 }

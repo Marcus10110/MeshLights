@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "StateSerialization.h"
 
 #define MAX_GROUPS	8
 #define MAX_NAME_LENGTH	16	//not including null termination. 17 bytes minimum size.
@@ -51,6 +52,7 @@ class StateManager
 {
 	public:
 		StateManager( StateChangedCallback callback );
+		void Init();
 		const State* GetState();
 
 		//actions:
@@ -76,4 +78,5 @@ class StateManager
 	private:
         State mState;
         StateChangedCallback mOnChangeCallback;
+		StateSerialization mStateSerializer;
 };
