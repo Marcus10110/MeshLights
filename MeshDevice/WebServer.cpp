@@ -25,7 +25,7 @@ void WebServer::Init()
     mServer->on("/change_brightness", HTTP_GET, [this](AsyncWebServerRequest *x){this->OnSetBrightness(x);});
     mServer->on("/change_group", HTTP_GET, [this](AsyncWebServerRequest *x){this->OnSetGroup(x);});
     mServer->on("/change_name", HTTP_GET, [this](AsyncWebServerRequest *x){this->OnSetName(x);});
-
+    mServer->on("/change_connection_mode", HTTP_GET, [this](AsyncWebServerRequest *x){this->OnSetConnectionMode(x);});
     mServer->begin();
 }
 
@@ -61,7 +61,13 @@ void WebServer::Update()
         const char* new_name = mNewName.c_str();
         mStateManager->SetDeviceName( mNewName.c_str() );
         mNewNameFlag = false;
-    }  
+    }
+
+    if( mNewConnectionModeFlag )
+    {
+        mStateManager->SetConnectionMode( mNewConnectionMode );
+        mNewConnectionModeFlag = false;
+    }
 }
 
 void WebServer::OnIndex(AsyncWebServerRequest* request)
@@ -78,6 +84,7 @@ void WebServer::OnIndex(AsyncWebServerRequest* request)
     helper.AddRow("Brightness", String(current_state->mBrightness));
     helper.AddRow("Group", String(current_state->mGroup));
     helper.AddRow("Name", String(current_state->mDeviceName));
+    helper.AddRow("Connection Mode", current_state->mConnectionMode == connection_mode_t::MESH ? "Mesh" : "Existing Wifi Network");
     helper.AddRow("Local State", String(current_state->mLocalState));
     helper.AddRow("Network State", String(current_state->mNetworkState[current_state->mGroup]));
     helper.AddRow("Auto Advance", String(current_state->mAutoAdvance ? "True" : "False"));
@@ -133,6 +140,13 @@ void WebServer::OnIndex(AsyncWebServerRequest* request)
     form.AddTextBox("mDeviceName", String(current_state->mDeviceName));
     form.AddSubmitButton();
     contents += form.ToString("change_name");
+    form.Clear();
+
+    form.AddLabel("Change Connection Mode");
+    form.AddRatio("mConnectionMode", "MESH", "Mesh", (current_state->mConnectionMode == connection_mode_t::MESH));
+    form.AddRatio("mConnectionMode", "EXISTING_NETWORK", "Existing Wifi Network", (current_state->mConnectionMode == connection_mode_t::EXISTING_NETWORK));
+    form.AddSubmitButton();
+    contents += form.ToString("change_connection_mode");
     form.Clear();
 
     contents = "<html>\n<head>\n<title>Mesh Device</title></head>\n<body>\n" + contents + "</body>\n</html>\n";
@@ -247,6 +261,38 @@ void WebServer::OnSetName(AsyncWebServerRequest* request)
 
     mNewName = new_value;
     mNewNameFlag = true;
+    request->redirect("/");
+}
+
+void WebServer::OnSetConnectionMode(AsyncWebServerRequest* request)
+{
+    const char* arg_name = "mConnectionMode";
+    if(!request->hasArg(arg_name))
+    {
+        request->send(200, "text/html", String("failed to detect parameter") +  String(arg_name));
+        return;
+    }
+
+    String arg = request->arg(arg_name);
+
+
+    connection_mode_t new_mode;
+    if( arg == "MESH" )
+    {
+        new_mode = connection_mode_t::MESH;
+    }
+    else if( arg == "EXISTING_NETWORK")
+    {
+        new_mode = connection_mode_t::EXISTING_NETWORK;
+    }
+    else
+    {
+        request->send(200, "text/html", "invalid arg.");
+        return;
+    }
+
+    mNewConnectionMode = new_mode;
+    mNewConnectionModeFlag = true;
     request->redirect("/");
 }
 

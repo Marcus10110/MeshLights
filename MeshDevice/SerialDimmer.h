@@ -14,6 +14,7 @@ class SerialDimmer
 public:
     SerialDimmer( uint16_t channel_count, StateManager* state_manager, GetTimeMsCallback time_getter );
     void Init();
+    void UpdateFromOpc(uint8_t* values, uint16_t count);
 private:
     void OnTimerEvent();
     void RenderState(uint32_t time_ms, uint8_t state);

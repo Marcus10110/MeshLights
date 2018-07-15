@@ -6,18 +6,18 @@ StateManager::StateManager( StateChangedCallback callback ) : mOnChangeCallback(
 void StateManager::Init()
 {
     mStateSerializer.Init();
-    //Serial.println("loading state...");
+    Serial.println("loading state...");
     if( !mStateSerializer.DeserializeState( &mState ) )
     {
-        //Serial.println("failed to read state. attempting write...");
+        Serial.println("failed to read state. attempting write...");
         //serialize the default state:
         State reset_default_state;
         mState = reset_default_state; //default copy assignment.
         mStateSerializer.SerializeState( &mState );
-        //Serial.println("finished writing default state");
+        Serial.println("finished writing default state");
         return;
     }
-    //Serial.println("successfully read state");
+    Serial.println("successfully read state");
 }
 
 const State* StateManager::GetState()
@@ -161,6 +161,13 @@ void StateManager::SetGroup(uint8_t group)
 void StateManager::SetDeviceName(const char* name)
 {
     strncpy( mState.mDeviceName, name, MAX_NAME_LENGTH);
+    mStateSerializer.SerializeState(&mState);
+    mOnChangeCallback(&mState);
+}
+
+void StateManager::SetConnectionMode(connection_mode_t connection_mode)
+{
+    mState.mConnectionMode = connection_mode;
     mStateSerializer.SerializeState(&mState);
     mOnChangeCallback(&mState);
 }

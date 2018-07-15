@@ -10,6 +10,7 @@ struct State;
 using StateChangedCallback = void(*)(const State* state);
 enum class device_type_t { LED, DIMMER };
 enum class device_mode_t {NETWORK, INDIVIDUAL, OPENPIXEL};
+enum class connection_mode_t { MESH, EXISTING_NETWORK };
 
 const uint32_t AUTOMATIC_STATE_DURRATION_MS = 1000; //how long all automatic animations last.
 
@@ -34,6 +35,7 @@ struct State
 	uint8_t mBrightness{255};
 	uint8_t mGroup{0};
 	char mDeviceName[MAX_NAME_LENGTH+1] = "untitled";
+	connection_mode_t mConnectionMode{connection_mode_t::MESH};
 	
 	//dynamic:
 	uint8_t mLocalState{0};
@@ -67,6 +69,7 @@ class StateManager
 		void SetBrightness(uint8_t brightness);
 		void SetGroup(uint8_t group);
 		void SetDeviceName(const char* name);
+		void SetConnectionMode(connection_mode_t connection_mode);
 		
 		//mesh actions:
         void NetworkStateChanged( uint8_t group, uint8_t state );

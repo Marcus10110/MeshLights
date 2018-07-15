@@ -15,5 +15,4 @@ private:
     void OnNewConnection(uint32_t nodeId);
     void OnChangedConnection();
     void OnNodeTimeAdjusted(int32_t offset);
-
 };

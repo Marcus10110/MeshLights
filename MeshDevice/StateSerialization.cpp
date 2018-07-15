@@ -5,7 +5,7 @@
 #include "State.h"
 
 static const uint16_t gMaxStringLength = 300;
-static const uint16_t gStringMarker = 0x0F5A;
+static const uint16_t gStringMarker = 0x0F5B; //revved when adding mConnectionMode.
 static const uint16_t gStateAddress = 0;
 
 StateSerialization::StateSerialization()
@@ -21,13 +21,14 @@ void StateSerialization::Init()
 void StateSerialization::SerializeState(const State* state)
 {
     //estimated json size: 150.
-    StaticJsonBuffer<200> jsonBuffer;
+    StaticJsonBuffer<250> jsonBuffer;
     JsonObject& root = jsonBuffer.createObject();
     root["mDeviceType"] = (int)state->mDeviceType;
     root["mLedCount"] = state->mLedCount;
     root["mBrightness"] = state->mBrightness;
     root["mGroup"] = state->mGroup;
     root["mDeviceName"] = state->mDeviceName;
+    root["mConnectionMode"] = (int)state->mConnectionMode;
 
     String write_buffer;
     root.printTo(write_buffer);
@@ -40,12 +41,18 @@ bool StateSerialization::DeserializeState(State* state)
     String readback_string;
     if(!ReadString(gStateAddress, readback_string))
     {
+        Serial.println("Serialization read failure: !ReadString");
         return false;
     }
-    StaticJsonBuffer<200> jsonBuffer;
+    StaticJsonBuffer<250> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(readback_string);
     if( !root.success())
+    {
+        Serial.println("json parse failed (initial)");
+        Serial.println("loaded string:");
+        Serial.println(readback_string);
         return false;
+    }
     int device_type_int = root["mDeviceType"];
     state->mDeviceType = (device_type_t)device_type_int;
     state->mLedCount = root["mLedCount"];
@@ -54,11 +61,19 @@ bool StateSerialization::DeserializeState(State* state)
     const char* device_name = root["mDeviceName"];
     if( (device_name == nullptr) || (strlen(device_name) > MAX_NAME_LENGTH) )
     {
+        Serial.println("device name read failure");
         return false;
     }
     strcpy(state->mDeviceName, device_name);
+    int connection_mode_int = root["mConnectionMode"];
+    state->mConnectionMode = (connection_mode_t)connection_mode_int;
 
-    return root.success();
+    bool json_success = root.success();
+    if(!json_success)
+    {
+        Serial.println("json read failure (final)");
+    }
+    return json_success;
 }
 
 void StateSerialization::TestEEPROM()
@@ -113,6 +128,7 @@ void StateSerialization::TestSerialization()
     Assert( ref_state.mGroup == target_state.mGroup, "mGroup missmatch" );
     Assert( ref_state.mGroup == (target_state.mGroup+1), "testing group missmatch" );
     Assert( strcmp(ref_state.mDeviceName, target_state.mDeviceName) == 0, "mDeviceName missmatch" );
+    Assert( ref_state.mConnectionMode == target_state.mConnectionMode, "mConnectionMode missmatch" );
     Serial.println("done with serialization test");
 }
 
@@ -150,9 +166,12 @@ bool StateSerialization::ReadString(uint16_t location, String& buffer)
     uint16_t string_length;
     EEPROM.get(location, string_length);
     location += sizeof(string_length);
-
     if( string_length > gMaxStringLength )
+    {
+        Serial.println("string length error");
+        Serial.println(string_length);
         return false;
+    }
 
     //read the string.
     buffer.reserve(string_length);
@@ -162,7 +181,10 @@ bool StateSerialization::ReadString(uint16_t location, String& buffer)
         if(i == string_length-1)
         {
             if( read_char != '\0' )
+            {
+                Serial.println("read_char != '\\0'");
                 return false;
+            }
             return true; //don't append null.
         }
         buffer.concat(read_char);

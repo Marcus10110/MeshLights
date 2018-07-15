@@ -23,6 +23,7 @@ class WebServer
         void OnSetBrightness(AsyncWebServerRequest* request);
         void OnSetGroup(AsyncWebServerRequest* request);
         void OnSetName(AsyncWebServerRequest* request);
+        void OnSetConnectionMode(AsyncWebServerRequest* request);
 
         AsyncWebServer* mServer; //not owned
         IPAddress* mIp; //not owned
@@ -43,6 +44,9 @@ class WebServer
 
         String mNewName;
         volatile bool mNewNameFlag{false};
+
+        volatile connection_mode_t mNewConnectionMode;
+        volatile bool mNewConnectionModeFlag{false};
 };
 
 class TableHelper

@@ -20,6 +20,26 @@ void SerialDimmer::Init()
     os_timer_arm(&mTimer, 1000 / FRAME_RATE, true); //1000ms, repeat = true;
 }
 
+void SerialDimmer::UpdateFromOpc(uint8_t* values, uint16_t count)
+{
+    const State* state = mStateManager->GetState();
+    if( state->mMode != device_mode_t::OPENPIXEL || state->mDeviceType != device_type_t::DIMMER)
+    {
+        //ignore the case when open pixel or dimmer is not selected.
+        return;
+    }
+
+    if( count > MAX_DIMMER_COUNT)
+        count = MAX_DIMMER_COUNT;
+
+    for( int i = 0; i < count; ++i)
+    {
+        Serial.printf("dimmer[%d] = %d\n", i, values[i]);
+    }
+
+    SetDimmerState(values, count);
+}
+
 void SerialDimmer::OnTimerEvent()
 {
     //none of this is thread safe at the moment.
