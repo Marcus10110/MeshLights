@@ -12,11 +12,12 @@ OpenPixelControl::OpenPixelControl(StateManager* state_manager, std::function<vo
 
 void OpenPixelControl::Init()
 {
-    if( WiFi.status() != WL_CONNECTED )
+    /*if( WiFi.status() != WL_CONNECTED )
     {
         //if regular wifi is not connected, don't activate the OPC UDP server at all.
         return; 
-    }
+    }*/
+    
     mEnabled = true;
     gUdp.begin(OPC_PORT);
 }

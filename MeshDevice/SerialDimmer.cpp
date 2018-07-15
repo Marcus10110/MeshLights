@@ -32,10 +32,15 @@ void SerialDimmer::UpdateFromOpc(uint8_t* values, uint16_t count)
     if( count > MAX_DIMMER_COUNT)
         count = MAX_DIMMER_COUNT;
 
+    Serial.printf("dimmers[%d] = { ", count);
     for( int i = 0; i < count; ++i)
     {
-        Serial.printf("dimmer[%d] = %d\n", i, values[i]);
+        if( i == count - 1)
+            Serial.printf("%d", values[i]);
+        else
+            Serial.printf("%d,\t", values[i]);
     }
+    Serial.println("}");
 
     SetDimmerState(values, count);
 }
