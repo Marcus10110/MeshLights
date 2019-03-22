@@ -8,15 +8,14 @@ Install the following from the library manager, latest versions:
 - CRC32
 - NeoPixelBus
 - ArduinoJson
+- PainlessMesh
+- TaskScheduler
 
 Download and install the following libraries:
-- [PainlessMesh](https://gitlab.com/BlackEdder/painlessMesh)
 - [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP)
 - [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer)
 - [ESPAsyncUDP](https://github.com/me-no-dev/ESPAsyncUDP) - note, this is not used yet, but will be needed for using Open Pixel Control (OPC).
 
-Note, ESPAsyncUDP requires an extremely specific version of the ESP8266 Arduino board library. Details here:
-https://github.com/me-no-dev/ESPAsyncUDP/issues/4#issuecomment-354225831
 
 Once OPC support is integrated, details will be added here for installation.
 
