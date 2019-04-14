@@ -21,6 +21,7 @@ class SerialDimmer
     void OnTimerEvent();
     void RenderState( uint32_t time_ms, uint8_t state );
     void RenderSpin( uint32_t time_ms );
+    void RenderChandelier( uint32_t time_ms );
     void RenderStateIndicator( uint32_t time_ms );
 
     // for writing to the device:

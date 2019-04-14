@@ -3,7 +3,11 @@
 #include "Global.h"
 #include <Arduino.h>
 
+#include "ChandelierAnimation.h"
+
 static SerialDimmer* gThis;
+
+static Animations::Chandelier gChandeliers[ MAX_DIMMER_COUNT ];
 
 SerialDimmer::SerialDimmer( uint16_t channel_count, StateManager* state_manager, GetTimeMsCallback time_getter )
     : mStateManager( state_manager ), mChannelCount( channel_count ), mGetMeshTimeMs( time_getter )
@@ -73,7 +77,11 @@ void SerialDimmer::OnTimerEvent()
 
 void SerialDimmer::RenderState( uint32_t time_ms, uint8_t state )
 {
-    if( state < NUM_BULB_STATES )
+    if( state == 0 )
+    {
+        RenderChandelier( time_ms );
+    }
+    else if( state < NUM_BULB_STATES )
     {
         RenderSpin( time_ms );
     }
@@ -99,6 +107,18 @@ void SerialDimmer::RenderSpin( uint32_t time_ms )
         else
             values[ i ] = 0;
     }
+    SetDimmerState( values, mChannelCount );
+}
+
+void SerialDimmer::RenderChandelier( uint32_t time_ms )
+{
+    uint8_t values[ MAX_DIMMER_COUNT ];
+
+    for( u16_t i = 0; i < mChannelCount; ++i )
+    {
+        values[ i ] = gChandeliers[ i ].Animate( time_ms );
+    }
+
     SetDimmerState( values, mChannelCount );
 }
 

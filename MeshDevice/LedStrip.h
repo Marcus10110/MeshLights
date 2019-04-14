@@ -19,7 +19,7 @@ class LedStrip
     void RenderRainbow( uint32_t time_ms, uint16_t led_count );
     void RenderStateIndicator( uint32_t time_ms, uint16_t led_count );
     os_timer_t mTimer;
-    NeoPixelBrightnessBus<NeoGrbFeature, NeoEsp8266Uart0800KbpsMethod> mStrip;
+    NeoPixelBrightnessBus<NeoGrbFeature, NeoEsp8266Uart1800KbpsMethod> mStrip;
     StateManager* mStateManager;
     const uint16_t mMaxLedCount;
     GetTimeMsCallback mGetMeshTimeMs;
