@@ -4,11 +4,14 @@
 #include <Arduino.h>
 
 #include "ChandelierAnimation.h"
+#include "WaveAnimation.h"
+namespace
+{
+    SerialDimmer* gThis;
 
-static SerialDimmer* gThis;
-
-static Animations::Chandelier gChandeliers[ MAX_DIMMER_COUNT ];
-
+    Animations::Chandelier gChandeliers[ MAX_DIMMER_COUNT ];
+    Animations::Wave gWave;
+}
 SerialDimmer::SerialDimmer( uint16_t channel_count, StateManager* state_manager, GetTimeMsCallback time_getter )
     : mStateManager( state_manager ), mChannelCount( channel_count ), mGetMeshTimeMs( time_getter )
 {
@@ -81,6 +84,10 @@ void SerialDimmer::RenderState( uint32_t time_ms, uint8_t state )
     {
         RenderChandelier( time_ms );
     }
+    else if( state == 1 )
+    {
+        RenderWave( time_ms );
+    }
     else if( state < NUM_BULB_STATES )
     {
         RenderSpin( time_ms );
@@ -117,6 +124,18 @@ void SerialDimmer::RenderChandelier( uint32_t time_ms )
     for( u16_t i = 0; i < mChannelCount; ++i )
     {
         values[ i ] = gChandeliers[ i ].Animate( time_ms );
+    }
+
+    SetDimmerState( values, mChannelCount );
+}
+
+void SerialDimmer::RenderWave( uint32_t time_ms )
+{
+    uint8_t values[ MAX_DIMMER_COUNT ];
+
+    for( u16_t i = 0; i < mChannelCount; ++i )
+    {
+        values[ i ] = gWave.Animate( time_ms, i );
     }
 
     SetDimmerState( values, mChannelCount );
