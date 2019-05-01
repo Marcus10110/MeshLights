@@ -4,11 +4,9 @@
 
 namespace
 {
-    // measured in bulbs.
-    float const WaveLength = 8;
+    float const PeriodSec = 8;
+    float const DelayPerBulb = 1;
 
-    // seconds per complete wave.
-    float const SecPerWavelength = 1.0 / WaveLength;
 
     float FMap( float x, float in_min, float in_max, float out_min, float out_max )
     {
@@ -38,10 +36,8 @@ namespace
 
     uint8_t GetBulbBrightness( uint32_t time_ms, int bulb )
     {
-        const float time_s = ( static_cast<float>( time_ms ) / 1000.0 );
-        float angle = TWO_PI * time_s / WaveLength;
-        float distance_wavelengths = SecPerWavelength * time_s;
-        angle += distance_wavelengths * TWO_PI / WaveLength;
+        const float time_s = ( static_cast<float>( time_ms ) / 1000.0 ) - (DelayPerBulb * bulb);
+        float angle = TWO_PI * time_s / PeriodSec;
         float raw_wave_value = sin( angle );
         return Normalize( sin( angle ) );
     }
